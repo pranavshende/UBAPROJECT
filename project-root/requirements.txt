@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+numpy
+pillow
+python-multipart
+reportlab
+opencv-python
+scikit-learn
+tensorflow==2.20.0
+tqdm

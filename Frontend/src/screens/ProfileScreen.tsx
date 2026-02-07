@@ -16,9 +16,9 @@ import ImagePicker from 'react-native-image-crop-picker';
 import ImageResizer from 'react-native-image-resizer';
 import { useNavigation } from '@react-navigation/native';
 
-const API_URL = 'http://10.0.2.2:5000/api/auth/profile';
-const PHOTO_URL = 'http://10.0.2.2:5000/api/auth/profile/photo';
-const IMAGE_BASE = 'http://10.0.2.2:5000/';
+const API_URL = ' http://192.168.1.2:5000/api/auth/profile';
+const PHOTO_URL = 'http://192.168.1.2:5000/api/auth/profile/photo';
+const IMAGE_BASE = 'http://192.168.1.2:5000/';
 /* 🔗 API CONFIG */
 
 
