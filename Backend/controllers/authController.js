@@ -89,9 +89,21 @@ exports.uploadProfilePhoto = async (req, res) => {
     res.status(500).json({ msg: 'Photo upload failed' });
   }
 };
+// const handleLogin = async () => {
+//   try {
+//     const res = await fetch('http://192.168.1.2:5000/api/auth/login', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         email,
+//         password,
+//       }),
+//     });
 const handleLogin = async () => {
   try {
-    const res = await fetch('http://192.168.1.2:5000/api/auth/login', {
+    const res = await fetch('http://0.0.0.0:5000/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

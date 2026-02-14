@@ -54,14 +54,6 @@ export default function HomeScreen({ navigation, onLogout }: Props & any) {
           <Text style={styles.cardText}>Weather Forecast</Text>
         </TouchableOpacity>
 
-        {/* ✅ STUDENT INFO BUTTON */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('StudentInfo')}
-        >
-          <Text style={styles.cardIcon}>🎓</Text>
-          <Text style={styles.cardText}>Student Info</Text>
-        </TouchableOpacity>
       </View>
 
       {/* BOTTOM NAV BAR */}

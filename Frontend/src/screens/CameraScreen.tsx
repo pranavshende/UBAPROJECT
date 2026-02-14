@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 
-import ImagePicker from 'react-native-image-crop-picker';
+import ImagePicker from 'react-native-image-crop-picker'; 
 import axios, { AxiosError } from 'axios';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';

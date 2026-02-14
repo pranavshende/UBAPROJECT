@@ -5,7 +5,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import CameraScreen from '../screens/CameraScreen';
-import StudentInfoScreen from '../screens/StudentInfoScreen';
+
 
 
 export type RootStackParamList = {
@@ -31,7 +31,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Weather" component={WeatherScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Disease" component={CameraScreen} />
-      <Stack.Screen name="StudentInfo"component={StudentInfoScreen}/>
+    
 
     </Stack.Navigator>
   );

@@ -16,20 +16,23 @@ import ImagePicker from 'react-native-image-crop-picker';
 import ImageResizer from 'react-native-image-resizer';
 import { useNavigation } from '@react-navigation/native';
 
-const API_URL = ' http://192.168.1.2:5000/api/auth/profile';
+/* 🔗 API CONFIG */
+const API_URL = 'http://192.168.1.2:5000/api/auth/profile';
 const PHOTO_URL = 'http://192.168.1.2:5000/api/auth/profile/photo';
 const IMAGE_BASE = 'http://192.168.1.2:5000/';
-/* 🔗 API CONFIG */
+
 
 
 export default function ProfileScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
   const [form, setForm] = useState({
+    name: '',
+    email: '',
     phone: '',
     village: '',
     landSize: '',
@@ -42,17 +45,24 @@ export default function ProfileScreen() {
       if (!token) return handleLogout();
 
       const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Failed to fetch profile');
 
-      setUser(data);
+      const u = data.user || data;
+
+      setUser(u);
       setForm({
-        phone: data.phone || '',
-        village: data.village || '',
-        landSize: data.landSize || '',
+        name: u.name || '',
+        email: u.email || '',
+        phone: u.phone || '',
+        village: u.village || '',
+        landSize: u.landSize || '',
       });
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -76,13 +86,18 @@ export default function ProfileScreen() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          village: form.village,
+          landSize: form.landSize,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Update failed');
 
-      setUser(data);
+      setUser(data.user || data);
       setEditing(false);
       Alert.alert('Success', 'Profile updated');
     } catch (err: any) {
@@ -141,14 +156,16 @@ export default function ProfileScreen() {
 
       const res = await fetch(PHOTO_URL, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || 'Upload failed');
 
-      setUser(data);
+      setUser(data.user || data);
       Alert.alert('Success', 'Profile photo updated');
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -160,7 +177,7 @@ export default function ProfileScreen() {
     await AsyncStorage.removeItem('token');
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Auth' as never }],
+      routes: [{ name: 'Auth' }],
     });
   };
 
@@ -176,7 +193,7 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.loader}>
-        <Text>Unable to load profile</Text>
+        <Text>Session expired. Please login again.</Text>
       </View>
     );
   }
@@ -209,12 +226,26 @@ export default function ProfileScreen() {
             </View>
           )}
         </TouchableOpacity>
+
+        <Text style={styles.name}>{user.name || 'User'}</Text>
+        <Text style={styles.email}>{user.email}</Text>
       </View>
 
       {/* DETAILS */}
       <View style={styles.infoCard}>
-        <Text style={styles.label}>Role</Text>
-        <Text style={styles.value}>{user.role || 'Farmer'}</Text>
+        <Text style={styles.label}>Name</Text>
+        {editing ? (
+          <TextInput
+            style={styles.input}
+            value={form.name}
+            onChangeText={(t) => setForm({ ...form, name: t })}
+          />
+        ) : (
+          <Text style={styles.value}>{user.name || 'Not added'}</Text>
+        )}
+
+        <Text style={styles.label}>Email</Text>
+        <Text style={styles.value}>{user.email || 'Not added'}</Text>
 
         <Text style={styles.label}>Phone</Text>
         {editing ? (
@@ -263,7 +294,7 @@ export default function ProfileScreen() {
   );
 }
 
-
+/* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -279,7 +310,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical:20,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     marginBottom: 20,
   },
@@ -367,19 +398,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-avatarImage: {
-  width: 90,
-  height: 90,
-  borderRadius: 45,
-  marginBottom: 10,
-},
-avatarPlaceholder: {
-  alignItems: 'center',
-  marginBottom: 10,
-},
-changeText: {
-  fontSize: 12,
-  color: '#2E7D32',
-  marginTop: 4,
-},
+  avatarImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    marginBottom: 10,
+  },
+  avatarPlaceholder: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  changeText: {
+    fontSize: 12,
+    color: '#2E7D32',
+    marginTop: 4,
+  },
 });
+ 
