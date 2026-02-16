@@ -22,9 +22,9 @@ import { COLORS, SHADOWS, SIZES, FONTS } from "../theme/Theme";
 import { useLanguage } from "../i18n/LanguageContexts";
 
 /* 🔗 API CONFIG */
-const API_URL = "http://192.168.1.2:5000/api/auth/profile";
-const PHOTO_URL = "http://192.168.1.2:5000/api/auth/profile/photo";
-const IMAGE_BASE = "http://192.168.1.2:5000/";
+const API_URL = "http://10.121.185.59:5000/api/auth/profile";
+const PHOTO_URL = "http://10.121.185.59:5000/api/auth/profile/photo";
+const IMAGE_BASE = "http://10.121.185.59:5000/";
 
 type Props = {
   onLogout: () => void;

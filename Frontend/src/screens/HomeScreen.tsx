@@ -72,7 +72,7 @@ export default function HomeScreen() {
          // Using the same endpoint as ProfileScreen
          const token = await AsyncStorage.getItem("token");
          if (token) {
-            const res = await fetch("http://192.168.1.2:5000/api/auth/profile", {
+            const res = await fetch("http://10.121.185.59:5000/api/auth/profile", {
                headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

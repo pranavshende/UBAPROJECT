@@ -18,7 +18,7 @@ import Share from 'react-native-share';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SHADOWS, SIZES } from '../theme/Theme';
 
-const API_BASE = 'http://192.168.1.2:8000'; // 🔁 CHANGE IF NEEDED
+const API_BASE = 'http://10.121.185.59:8000'; // 🔁 CHANGE IF NEEDED
 const DETECT_URL = `${API_BASE}/detect`;
 const PDF_URL = `${API_BASE}/export/pdf`;
 
