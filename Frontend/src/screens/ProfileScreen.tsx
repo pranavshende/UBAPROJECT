@@ -31,7 +31,7 @@ type Props = {
 };
 
 export default function ProfileScreen({ onLogout }: Props) {
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, t } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -119,7 +119,7 @@ export default function ProfileScreen({ onLogout }: Props) {
 
       setUser(data.user || data);
       setEditing(false);
-      Alert.alert("Success", "Profile updated");
+      Alert.alert(t.success, t.profileUpdated);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     }
@@ -241,7 +241,7 @@ export default function ProfileScreen({ onLogout }: Props) {
         </View>
 
         {/* Language Section */}
-        <Text style={styles.sectionTitle}>Language</Text>
+        <Text style={styles.sectionTitle}>{t.language}</Text>
         <View style={styles.langContainer}>
           {['en', 'hi', 'mr'].map((lang) => (
             <TouchableOpacity 
@@ -257,7 +257,7 @@ export default function ProfileScreen({ onLogout }: Props) {
         </View>
 
         {/* Details / Edit Form */}
-        <Text style={styles.sectionTitle}>Farm Details</Text>
+        <Text style={styles.sectionTitle}>{t.farmDetails}</Text>
         <View style={styles.detailsCard}>
            {['name', 'phone', 'village', 'landSize'].map((field) => (
              <View key={field} style={styles.fieldRow}>
@@ -267,7 +267,9 @@ export default function ProfileScreen({ onLogout }: Props) {
                      size={16} 
                      color={COLORS.primary} 
                    />
-                   <Text style={styles.fieldLabel}>{field}</Text>
+                   <Text style={styles.fieldLabel}>
+                     {field === 'name' ? t.name : field === 'phone' ? t.phone : field === 'village' ? t.village : t.landSize}
+                   </Text>
                 </View>
                 {editing ? (
                   <TextInput 
@@ -282,17 +284,17 @@ export default function ProfileScreen({ onLogout }: Props) {
            ))}
            {editing ? (
               <TouchableOpacity style={styles.saveBtn} onPress={saveProfile}>
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                <Text style={styles.saveBtnText}>{t.saveChanges}</Text>
               </TouchableOpacity>
            ) : (
               <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)}>
-                <Text style={styles.editBtnText}>Edit Details</Text>
+                <Text style={styles.editBtnText}>{t.editDetails}</Text>
               </TouchableOpacity>
            )}
         </View>
 
         <View style={{ height: 20 }} />
-        <MenuItem icon="logout" label="Logout" danger onPress={handleLogout} />
+        <MenuItem icon="logout" label={t.logout} danger onPress={handleLogout} />
         
       </ScrollView>
     </View>

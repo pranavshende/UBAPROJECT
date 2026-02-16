@@ -9,13 +9,13 @@ export const COLORS = {
     accent: '#8D6E63',    // Earthy brown
 
     // Backgrounds
-    background: '#E0E5E0', // Off-white, green tint
-    surface: '#E0E5E0',    // Neumorphic base
+    background: '#F8F9FA', // Clean, bright white-gray
+    surface: '#FFFFFF',    // Pure white for cards
     white: '#FFFFFF',
 
     // Text
-    textMain: '#1B261D',   // Deep forest green/black
-    textSecondary: '#4A5D4E',
+    textMain: '#212121',   // Clear dark gray/black
+    textSecondary: '#757575',
 
     // Status
     success: '#2E7D32',
@@ -26,32 +26,32 @@ export const COLORS = {
 export const SHADOWS = {
     // Light source top-left
     neumorphic: {
-        shadowColor: '#BDC2BD',
-        shadowOffset: { width: 9, height: 9 },
-        shadowOpacity: 1,
-        shadowRadius: 16,
-        elevation: 10, // Android fallback
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3, // Android fallback
         backgroundColor: COLORS.surface, // needed for iOS shadow visibility on views
     },
     neumorphicLight: {
-        shadowColor: '#FFFFFF',
-        shadowOffset: { width: -9, height: -9 },
-        shadowOpacity: 1,
-        shadowRadius: 16,
-        elevation: 0,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
     },
     // Pressed state
     inset: {
         // React Native doesn't support inset shadows natively without libs like react-native-neomorph-shadows.
         // We will simulate pressed state with background color shift or reduced elevation.
-        backgroundColor: '#D6DBD6',
+        backgroundColor: '#F5F5F5',
     },
     float: {
-        shadowColor: '#BDC2BD',
-        shadowOffset: { width: 14, height: 14 },
-        shadowOpacity: 1,
-        shadowRadius: 28,
-        elevation: 20,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
     }
 };
 
