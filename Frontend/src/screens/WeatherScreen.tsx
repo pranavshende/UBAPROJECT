@@ -1,448 +1,375 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  PermissionsAndroid,
-  Platform,
   ScrollView,
-  RefreshControl,
+  StatusBar,
   TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+  Platform,
+  PermissionsAndroid,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { COLORS, SHADOWS, SIZES } from "../theme/Theme";
+import axios from "axios";
 import Geolocation from 'react-native-geolocation-service';
-import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
-import { LineChart } from 'react-native-chart-kit';
-
-/* ---------- TYPES ---------- */
-interface CurrentWeather {
-  temperature: number;
-  windspeed: number;
-  weathercode: number;
-}
-
-interface DailyForecast {
-  time: string[];
-  temperature_2m_max: number[];
-  temperature_2m_min: number[];
-  weathercode: number[];
-}
-
-const screenWidth = Dimensions.get('window').width;
-
-const { width, height } = Dimensions.get('window');
-const scale = (size: number): number => (width / 375) * size;
 
 export default function WeatherScreen() {
-  const navigation = useNavigation<any>();
-
-  const [current, setCurrent] = useState<CurrentWeather | null>(null);
-  const [daily, setDaily] = useState<DailyForecast | null>(null);
-  const [city, setCity] = useState('Loading...');
+  const [current, setCurrent] = useState<any>(null);
+  const [daily, setDaily] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [locationName, setLocationName] = useState("Locating...");
 
-  /* ---------- PERMISSION ---------- */
+  /* ---------------- FETCH WEATHER ---------------- */
+  // Using Open-Meteo as it's free and no-key
+  const fetchWeather = async () => {
+    try {
+      let lat = 18.5204; // Default Pune
+      let lon = 73.8567;
+
+      // Try getting location
+      const hasPermission = await requestLocationPermission();
+      if (hasPermission) {
+        Geolocation.getCurrentPosition(
+            (position) => {
+                lat = position.coords.latitude;
+                lon = position.coords.longitude;
+                getWeatherData(lat, lon);
+            },
+            (error) => {
+                console.log(error);
+                getWeatherData(lat, lon); // Fallback
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        );
+      } else {
+          getWeatherData(lat, lon);
+      }
+    } catch (e) {
+      console.log(e);
+      setLoading(false);
+    }
+  };
+
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        return false;
+      }
     }
     return true;
   };
 
-  /* ---------- FETCH WEATHER ---------- */
-  const fetchWeather = async () => {
-    try {
-      setError(null);
+  const getWeatherData = async (lat: number, lon: number) => {
+      try {
+        // Reverse Geocoding for name
+        // (Optional, skipping for speed or using mock name if API fails)
+        setLocationName(`${lat.toFixed(2)}, ${lon.toFixed(2)}`);
 
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) {
-        setError('Location permission denied');
+        const res = await axios.get(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum_daily,windspeed_10m_max&timezone=auto`
+        );
+        
+        setCurrent(res.data.current_weather);
+        setDaily(res.data.daily);
         setLoading(false);
-        return;
+      } catch (err) {
+          console.log("API Error", err);
+          setLoading(false);
       }
-
-      Geolocation.getCurrentPosition(
-        async ({ coords }) => {
-          const { latitude, longitude } = coords;
-
-          const weatherRes = await axios.get(
-            'https://api.open-meteo.com/v1/forecast',
-            {
-              params: {
-                latitude,
-                longitude,
-                current_weather: true,
-                daily: 'temperature_2m_max,temperature_2m_min,weathercode',
-                timezone: 'auto',
-              },
-            }
-          );
-
-          setCurrent(weatherRes.data.current_weather);
-          setDaily(weatherRes.data.daily);
-
-          const geoRes = await axios.get(
-            'https://api.bigdatacloud.net/data/reverse-geocode-client',
-            {
-              params: { latitude, longitude, localityLanguage: 'en' },
-            }
-          );
-
-          setCity(
-            geoRes.data.city ||
-              geoRes.data.locality ||
-              geoRes.data.principalSubdivision ||
-              'Your Location'
-          );
-
-          setLoading(false);
-          setRefreshing(false);
-        },
-        () => {
-          setError('Unable to fetch location');
-          setLoading(false);
-          setRefreshing(false);
-        },
-        { enableHighAccuracy: true }
-      );
-    } catch {
-      setError('Failed to fetch weather');
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  }
 
   useEffect(() => {
     fetchWeather();
   }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchWeather();
+  /* ---------------- HELPERS ---------------- */
+  const getWeatherIcon = (code: number) => {
+      if (code <= 1) return 'weather-sunny';
+      if (code <= 3) return 'weather-partly-cloudy';
+      if (code <= 48) return 'weather-fog';
+      if (code <= 67) return 'weather-rainy';
+      if (code <= 77) return 'weather-snowy';
+      if (code <= 99) return 'weather-lightning';
+      return 'weather-cloudy';
   };
 
-  /* ---------- HELPERS ---------- */
-  const weatherLabel = (code: number) => {
-    if (code === 0) return 'Clear';
-    if (code <= 3) return 'Cloudy';
-    if (code <= 48) return 'Fog';
-    if (code <= 67) return 'Rain';
-    if (code <= 77) return 'Snow';
-    return 'Storm';
+  const getAdvisories = (weatherCode: number, windSpeed: number) => {
+      const advisories = [];
+      
+      // Spraying Logic
+      if (weatherCode > 50 || windSpeed > 15) {
+          advisories.push({
+              type: 'bad',
+              title: 'Avoid Spraying',
+              text: 'High winds or rain expected. Chemicals may wash off.',
+              icon: 'spray-bottle'
+          });
+      } else {
+          advisories.push({
+              type: 'good',
+              title: 'Good for Spraying',
+              text: 'Calm winds and no rain. Ideal for pesticides.',
+              icon: 'spray-bottle'
+          });
+      }
+
+      // Irrigation Logic
+      if (weatherCode >= 51 && weatherCode <= 67) {
+           advisories.push({
+              type: 'bad',
+              title: 'Skip Irrigation',
+              text: 'Rainfall is expected today. Save water.',
+              icon: 'water-off'
+          });
+      } else if (current?.temperature > 30) {
+           advisories.push({
+              type: 'good',
+              title: 'Irrigate Crops',
+              text: 'High temperatures detected. Crops need water.',
+              icon: 'water'
+          });
+      }
+
+      return advisories;
   };
 
-  const formatDay = (date: string) =>
-    new Date(date).toLocaleDateString('en-IN', {
-      weekday: 'short',
-    });
-
-  /* ---------- UI STATES ---------- */
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2E7D32" />
-        <Text>Fetching weather…</Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.error}>{error}</Text>
-        <Text style={styles.retry} onPress={fetchWeather}>
-          Retry
-        </Text>
-      </View>
-    );
-  }
-
-  if (!current || !daily) return null;
-
-  /* ---------- CHART DATA ---------- */
-  const chartData = {
-    labels: daily.time.slice(1, 6).map(formatDay),
-    datasets: [
-      {
-        data: daily.temperature_2m_max.slice(1, 6),
-        strokeWidth: 3,
-      },
-    ],
-  };
+  const advisories = current ? getAdvisories(current.weathercode, current.windspeed) : [];
 
   return (
-    <View style={styles.screen}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Weather</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* CURRENT WEATHER CARD */}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Main Weather Card */}
         <View style={styles.mainCard}>
-          <Text style={styles.city}>{city}</Text>
-          <Text style={styles.temp}>{Math.round(current.temperature)}°C</Text>
-          <Text style={styles.condition}>
-            {weatherLabel(current.weathercode)}
-          </Text>
-
-          <View style={styles.row}>
-            <Text style={styles.stat}>🌬 {current.windspeed} km/h</Text>
-            <Text style={styles.stat}>☀️ Day Forecast</Text>
-          </View>
-        </View>
-
-        {/* LINE CHART */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>5-Day Temperature Trend</Text>
-
-          <LineChart
-            data={chartData}
-            width={screenWidth - 40}
-            height={220}
-            yAxisSuffix="°"
-            chartConfig={{
-              backgroundColor: '#ffffff',
-              backgroundGradientFrom: '#ffffff',
-              backgroundGradientTo: '#ffffff',
-              decimalPlaces: 0,
-              color: () => '#2E7D32',
-              labelColor: () => '#1B5E20',
-              propsForDots: {
-                r: '4',
-                strokeWidth: '2',
-                stroke: '#1B5E20',
-              },
-            }}
-            bezier
-            style={{ borderRadius: 16 }}
-          />
-        </View>
-
-        {/* FORECAST LIST */}
-        <View style={styles.forecastCard}>
-          <Text style={styles.forecastTitle}>Next 5 Days</Text>
-
-          {daily.time.slice(1, 6).map((day, index) => (
-            <View key={day} style={styles.forecastRow}>
-              <Text style={styles.day}>{formatDay(day)}</Text>
-              <Text style={styles.range}>
-                {Math.round(daily.temperature_2m_min[index + 1])}° /{' '}
-                {Math.round(daily.temperature_2m_max[index + 1])}°
-              </Text>
-              <Text style={styles.label}>
-                {weatherLabel(daily.weathercode[index + 1])}
-              </Text>
+            <View style={styles.headerRow}>
+                <View>
+                    {/* Placeholder for city name */}
+                    <Text style={styles.city}>Pune District</Text> 
+                    <Text style={styles.date}>{new Date().toDateString()}</Text>
+                </View>
+                <Icon name={getWeatherIcon(current?.weathercode)} size={60} color={COLORS.white} />
             </View>
-          ))}
+
+            <View style={styles.tempContainer}>
+                <Text style={styles.temp}>{Math.round(current?.temperature)}°</Text>
+                <View style={styles.minMax}>
+                    <Text style={styles.minMaxText}>Max: {Math.round(daily?.temperature_2m_max[0])}°</Text>
+                    <Text style={styles.minMaxText}>Min: {Math.round(daily?.temperature_2m_min[0])}°</Text>
+                </View>
+            </View>
+            
+            <View style={styles.statsRow}>
+                <View style={styles.stat}>
+                    <Icon name="weather-windy" size={20} color={COLORS.primaryLight} />
+                    <Text style={styles.statVal}>{current?.windspeed} km/h</Text>
+                </View>
+                <View style={styles.stat}>
+                   <Icon name="water" size={20} color={COLORS.primaryLight} />
+                   <Text style={styles.statVal}>{daily?.precipitation_sum_daily[0]} mm</Text>
+                </View>
+            </View>
         </View>
+
+        {/* Farming Advisory */}
+        <Text style={styles.sectionTitle}>Farming Advisory</Text>
+        {advisories.map((adv, index) => (
+            <View key={index} style={[styles.advisoryCard, adv.type === 'good' ? styles.goodAdv : styles.badAdv]}>
+                <View style={styles.advHeader}>
+                    <Icon 
+                        name={adv.type === 'good' ? 'check-circle' : 'alert-circle'} 
+                        size={28} 
+                        color={adv.type === 'good' ? COLORS.success : COLORS.error} 
+                    />
+                    <Text style={[styles.advTitle, { color: adv.type === 'good' ? COLORS.success : COLORS.error }]}>
+                        {adv.title}
+                    </Text>
+                </View>
+                <Text style={styles.advText}>{adv.text}</Text>
+            </View>
+        ))}
+
+        {/* 5-Day Forecast */}
+        <Text style={styles.sectionTitle}>Week Ahead</Text>
+        <View style={styles.forecastList}>
+            {daily?.time.slice(1, 6).map((time: string, index: number) => (
+                <View key={time} style={styles.forecastRow}>
+                    <Text style={styles.dayText}>
+                        {new Date(time).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </Text>
+                    <Icon name={getWeatherIcon(daily.weathercode[index+1])} size={24} color={COLORS.textSecondary} />
+                    <View style={styles.tempCol}>
+                        <Text style={styles.highTemp}>{Math.round(daily.temperature_2m_max[index+1])}°</Text>
+                        <Text style={styles.lowTemp}>{Math.round(daily.temperature_2m_min[index+1])}°</Text>
+                    </View>
+                </View>
+            ))}
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
 }
 
-/* ---------- STYLES ---------- */
-const COLORS = {
-  bg: '#EAF6EC',
-  primary: '#1B5E20',
-  secondary: '#2E7D32',
-  accent: '#4CAF50',
-  muted: '#81C784',
-  white: '#FFFFFF',
-  error: '#C62828',
-  divider: '#E0E0E0',
-};
-
-const SHADOW = {
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.15,
-  shadowRadius: 6,
-  elevation: 6,
-};
-
-export const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-
+const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: scale(20),
-    paddingBottom: scale(20),
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
-
-  /* ---------- HEADER ---------- */
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: scale(20),
-    paddingVertical: scale(30),
+  center: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center'
   },
-
-  back: {
-    fontSize: scale(24),
-    color: COLORS.primary,
+  scrollContent: {
+    padding: SIZES.padding,
+    paddingTop: 20,
   },
-
-  headerTitle: {
-    fontSize: scale(20),
-    fontWeight: '700',
-    color: COLORS.primary,
-    letterSpacing: 0.5,
-  },
-
-  /* ---------- MAIN WEATHER CARD ---------- */
   mainCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: scale(24),
-    paddingVertical: scale(28),
-    paddingHorizontal: scale(22),
-    alignItems: 'center',
-    marginTop: scale(10),
-    ...SHADOW,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.radiusLg,
+    padding: 24,
+    marginBottom: 24,
+    ...SHADOWS.float,
   },
-
-  city: {
-    fontSize: scale(20),
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: scale(4),
-  },
-
-  temp: {
-    fontSize: scale(64),
-    fontWeight: '800',
-    color: COLORS.secondary,
-    marginVertical: scale(6),
-  },
-
-  condition: {
-    fontSize: scale(16),
-    color: COLORS.accent,
-    marginBottom: scale(10),
-  },
-
-  row: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    marginTop: scale(12),
+    alignItems: 'center',
   },
-
+  city: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  date: {
+    fontSize: 14,
+    color: COLORS.primaryLight,
+  },
+  tempContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  temp: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  minMax: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  minMaxText: {
+    fontSize: 16,
+    color: COLORS.primaryLight,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 20,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    padding: 12,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
   stat: {
-    fontSize: scale(14),
-    color: COLORS.secondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statVal: {
+    color: COLORS.white,
     fontWeight: '600',
   },
 
-  label: {
-    fontSize: scale(12),
-    color: COLORS.muted,
-    textAlign: 'center',
-    marginTop: scale(2),
-  },
-
-  /* ---------- CHART CARD ---------- */
-chartCard: {
-  marginTop: scale(20),
-  backgroundColor: COLORS.white,
-  borderRadius: scale(22),
-  paddingTop: scale(16),
-  paddingHorizontal: scale(0),
-  paddingBottom: scale(18),
-  overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
-  ...SHADOW,
-},
-
-chartTitle: {
-  fontSize: scale(16),
-  fontWeight: '700',
-  color: COLORS.primary,
-  textAlign: 'center',
-  marginBottom: scale(10),
-  letterSpacing: 0.3,
-},
-
-/* IMPORTANT: chart container */
-chartContainer: {
-  height: scale(220),          // 🔥 REQUIRED
-  width: '100%',
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-  /* ---------- FORECAST CARD ---------- */
-  forecastCard: {
-    marginTop: scale(20),
-    backgroundColor: COLORS.white,
-    borderRadius: scale(20),
-    padding: scale(18),
-    ...SHADOW,
-  },
-
-  forecastTitle: {
-    fontSize: scale(16),
+  /* ADVISORY */
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: scale(10),
-    color: COLORS.primary,
+    color: COLORS.textMain,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  advisoryCard: {
+    padding: 16,
+    borderRadius: SIZES.radiusMd,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    backgroundColor: COLORS.surface,
+    ...SHADOWS.neumorphicLight,
+  },
+  goodAdv: {
+    borderLeftColor: COLORS.success,
+    backgroundColor: '#F1F8E9',
+  },
+  badAdv: {
+    borderLeftColor: COLORS.error,
+    backgroundColor: '#FFEBEE',
+  },
+  advHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  advTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  advText: {
+    color: COLORS.textSecondary,
+    marginLeft: 34,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
+  /* FORECAST */
+  forecastList: {
+    borderRadius: SIZES.radiusLg,
+    padding: 16,
+    ...SHADOWS.neumorphic,
+  },
   forecastRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: scale(10),
-    borderBottomWidth: 0.6,
-    borderBottomColor: COLORS.divider,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-
-  day: {
-    fontSize: scale(14),
+  dayText: {
+    fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.textMain,
+    width: 60,
   },
-
-  range: {
-    fontSize: scale(14),
-    color: COLORS.secondary,
-    fontWeight: '500',
+  tempCol: {
+    flexDirection: 'row',
+    gap: 10,
+    width: 80,
+    justifyContent: 'flex-end',
   },
-
-  /* ---------- STATES ---------- */
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  error: {
-    color: COLORS.error,
-    fontSize: scale(14),
-    fontWeight: '600',
-  },
-
-  retry: {
-    marginTop: scale(12),
-    color: COLORS.secondary,
-    fontSize: scale(15),
+  highTemp: {
     fontWeight: '700',
+    color: COLORS.textMain,
+  },
+  lowTemp: {
+    color: COLORS.textSecondary,
   },
 });

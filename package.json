@@ -1,0 +1,28 @@
+{
+  "name": "ubaproject2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-all": "concurrently \"cd Frontend && npx react-native run-android\" \"cd Backend && nodemon server.js\" \"cd project-root && uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pranavshende/UBAPROJECT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pranavshende/UBAPROJECT/issues"
+  },
+  "homepage": "https://github.com/pranavshende/UBAPROJECT#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "react-router-dom": "^6.21.3"
+  }
+}

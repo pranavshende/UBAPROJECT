@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
-import { enableScreens } from 'react-native-screens';
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationContainer } from "@react-navigation/native";
 
-import AppNavigator from './src/navigation/AppNavigator';
-import AuthScreen from './src/screens/AuthScreen';
+import { LanguageProvider } from "./src/i18n/LanguageContexts";
+import MainTabs from "./src/navigation/MainTabs";
+import AuthScreen from "./src/screens/AuthScreen";
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkLogin = async () => {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       setIsLoggedIn(!!token);
       setLoading(false);
     };
@@ -22,21 +22,21 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
-      {isLoggedIn ? (
-        <AppNavigator />
-      ) : (
-        <AuthScreen onLoginSuccess={() => setIsLoggedIn(true)} />
-      )}
-    </NavigationContainer>
+    <LanguageProvider>
+      <NavigationContainer>
+        {isLoggedIn ? (
+          <MainTabs onLogout={() => setIsLoggedIn(false)} />
+        ) : (
+          <AuthScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+        )}
+      </NavigationContainer>
+    </LanguageProvider>
   );
 }
-
-enableScreens();

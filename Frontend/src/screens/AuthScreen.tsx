@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,147 +7,172 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  ActivityIndicator,
+} from "react-native";
+import LinearGradient from "react-native-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { loginUser, registerUser } from "../services/authService";
 
-import { loginUser, registerUser } from '../services/authService';
+type Props = {
+  onLoginSuccess: () => void;
+};
 
-export default function AuthScreen({ onLoginSuccess }: any) {
+export default function AuthScreen({ onLoginSuccess }: Props) {
   const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleAuth = async () => {
     if (!email || !password || (!isLogin && !name)) {
-      Alert.alert('Error', 'Please fill all fields');
+      Alert.alert("Error", "Please fill all fields");
       return;
     }
 
     try {
+      setLoading(true);
+
       if (isLogin) {
-  const res = await loginUser(email, password);
+        const res = await loginUser(email, password);
 
-  // ✅ SAVE TOKEN
-  await AsyncStorage.setItem('token', res.token);
+        await AsyncStorage.setItem("token", res.token);
 
-  Alert.alert('Success', `Welcome ${res.user?.name || 'User'}`);
-  onLoginSuccess();
-}
-
-else {
+        Alert.alert("Success", `Welcome ${res.user?.name || "User"}`);
+        onLoginSuccess();
+      } else {
         await registerUser(name, email, password);
-        Alert.alert('Success', 'Account created successfully');
+        Alert.alert("Success", "Account created successfully");
         setIsLogin(true);
       }
     } catch (err: any) {
-      Alert.alert('Error', err.msg || 'Something went wrong');
+      Alert.alert("Error", err.msg || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.logo}>🌱 Krishimitra</Text>
-        <Text style={styles.heading}>
-          {isLogin ? 'Login' : 'Create Account'}
-        </Text>
+    <LinearGradient
+      colors={["#A8E063", "#1FA463"]}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.logo}>Krishimitra</Text>
 
-        {!isLogin && (
+          <Text style={styles.heading}>
+            {isLogin ? "Welcome Back" : "Create Account"}
+          </Text>
+
+          {!isLogin && (
+            <TextInput
+              placeholder="Full Name"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+            />
+          )}
+
           <TextInput
-            placeholder="Full Name"
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
             style={styles.input}
-            value={name}
-            onChangeText={setName}
+            value={email}
+            onChangeText={setEmail}
           />
-        )}
 
-        <TextInput
-          placeholder="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-        />
+          <TextInput
+            placeholder="Password"
+            secureTextEntry
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
 
-        <TextInput
-          placeholder="Password"
-          secureTextEntry
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-        />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleAuth}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {isLogin ? "Login" : "Sign Up"}
+              </Text>
+            )}
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleAuth}>
-          <Text style={styles.buttonText}>
-            {isLogin ? 'Login' : 'Sign Up'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-          <Text style={styles.switchText}>
-            {isLogin
-              ? "Don't have an account? Sign Up"
-              : 'Already have an account? Login'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+            <Text style={styles.switchText}>
+              {isLogin
+                ? "Don't have an account? Sign Up"
+                : "Already have an account? Login"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   card: {
-    width: '90%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 25,
-    elevation: 6,
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 28,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 10,
   },
   logo: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    textAlign: 'center',
-    marginBottom: 5,
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1FA463",
+    textAlign: "center",
+    marginBottom: 8,
   },
   heading: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#2E7D32',
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 25,
+    color: "#0B3D2E",
+    fontWeight: "600",
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#C8E6C9',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 15,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#2E7D32',
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 5,
+    backgroundColor: "#1FA463",
+    padding: 16,
+    borderRadius: 20,
+    alignItems: "center",
+    marginTop: 10,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
   switchText: {
-    color: '#1B5E20',
-    textAlign: 'center',
-    marginTop: 15,
+    color: "#0B3D2E",
+    textAlign: "center",
+    marginTop: 20,
     fontSize: 14,
   },
 });
