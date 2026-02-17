@@ -5,7 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 
 import { LanguageProvider } from "./src/i18n/LanguageContexts";
 import MainTabs from "./src/navigation/MainTabs";
-import AuthScreen from "./src/screens/AuthScreen";
+import AuthNavigator from "./src/navigation/AuthNavigator";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -34,7 +34,7 @@ export default function App() {
         {isLoggedIn ? (
           <MainTabs onLogout={() => setIsLoggedIn(false)} />
         ) : (
-          <AuthScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+          <AuthNavigator onLoginSuccess={() => setIsLoggedIn(true)} />
         )}
       </NavigationContainer>
     </LanguageProvider>
